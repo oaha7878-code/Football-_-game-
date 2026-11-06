@@ -7,7 +7,7 @@ main{max-width:650px;margin:auto}.card{background:#1b2338;border:1px solid #ffff
 h1{font-size:34px}.muted{color:#b5bfd4;line-height:1.8}.gold{color:#ffd166}button{border:0;border-radius:12px;padding:13px;font-weight:bold;cursor:pointer;background:#ffd166;color:#202033;margin:5px 0;width:100%}
 button:disabled{opacity:.45;cursor:not-allowed}.alt{background:#354363;color:white}input{width:100%;padding:14px;background:#11192b;border:1px solid #52617f;color:white;border-radius:12px;margin:8px 0;font-size:16px}
 .hidden{display:none!important}.code{font-size:34px;letter-spacing:7px;color:#ffd166;text-align:center;padding:16px;background:#11192b;border-radius:12px}
-.player{font-size:25px;color:#ffd166;text-align:center;padding:22px;background:#293b59;border-radius:16px;margin:12px 0}
+.player{font-size:32px;color:#ffd166;text-align:center;padding:30px;background:#293b59;border-radius:16px;margin:12px 0;font-weight:bold}
 .chat{height:250px;overflow:auto;background:#11192b;border-radius:12px;padding:10px}.msg{background:#34415f;padding:10px;border-radius:12px;margin:7px 0;max-width:85%;overflow-wrap:anywhere}.mine{background:#31543f;margin-right:auto}.small{font-size:12px;color:#b5bfd4}
 </style></head><body><main>
 <h2>⚽ <span class="gold">مين اللاعب؟</span> <small class="small">أونلاين 1v1</small></h2>
@@ -104,8 +104,7 @@ async function refresh(){
 
 async function choose(){
   secret = await call("get_or_assign_secret");
-  const meta = [secret.club, secret.country, secret.position].filter(Boolean).join(" • ");
-  $("player").textContent = secret.player_name + (meta ? " — " + meta : "");
+  $("player").textContent = secret.player_name;
   $("secretmsg").textContent = "";
   show("secret");
 }
@@ -137,8 +136,7 @@ $("pick").onclick   = () => choose().catch(err);
 $("reroll").onclick = async () => {
   try {
     secret = await call("reroll_my_secret");
-    const meta = [secret.club, secret.country, secret.position].filter(Boolean).join(" • ");
-    $("player").textContent = secret.player_name + (meta ? " — " + meta : "");
+    $("player").textContent = secret.player_name;
   } catch(e){ err(e); }
 };
 $("confirm").onclick = async () => {
