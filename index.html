@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>مين اللاعب؟</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#101322"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#29375a,#101322 60%);color:#fff;font-family:Tahoma,Arial;padding:18px}
+main{max-width:650px;margin:auto}.card{background:#1b2338;border:1px solid #ffffff20;border-radius:20px;padding:20px;margin:12px 0}
+h1{font-size:34px}.muted{color:#b5bfd4;line-height:1.8}.gold{color:#ffd166}button{border:0;border-radius:12px;padding:13px;font-weight:bold;cursor:pointer;background:#ffd166;color:#202033;margin:5px 0;width:100%}
+button:disabled{opacity:.45;cursor:not-allowed}.alt{background:#354363;color:white}input{width:100%;padding:14px;background:#11192b;border:1px solid #52617f;color:white;border-radius:12px;margin:8px 0;font-size:16px}
+.hidden{display:none!important}.code{font-size:34px;letter-spacing:7px;color:#ffd166;text-align:center;padding:16px;background:#11192b;border-radius:12px}
+.player{font-size:25px;color:#ffd166;text-align:center;padding:22px;background:#293b59;border-radius:16px;margin:12px 0}
+.chat{height:250px;overflow:auto;background:#11192b;border-radius:12px;padding:10px}.msg{background:#34415f;padding:10px;border-radius:12px;margin:7px 0;max-width:85%;overflow-wrap:anywhere}.mine{background:#31543f;margin-right:auto}.small{font-size:12px;color:#b5bfd4}
+</style></head><body><main>
+<h2>⚽ <span class="gold">مين اللاعب؟</span> <small class="small">أونلاين 1v1</small></h2>
+<section id="home" class="card"><h1>تحدي اللاعب السري</h1><p class="muted">كل لاعب يختار لاعبًا سريًا، وبعدها تتبادلوا الأسئلة في شات مباشر وتحاولوا تخمين لاعب الخصم.</p>
+<p class="small" id="status">جاري الاتصال بقاعدة البيانات...</p><button id="create" disabled>إنشاء غرفة</button>
+<input id="code" maxlength="6" placeholder="كود الغرفة"><button class="alt" id="join" disabled>انضمام</button></section>
+<section id="lobby" class="card hidden"><p>كود الغرفة — ابعته لصاحبك</p><div class="code" id="roomcode"></div><p id="lobbymsg" class="muted"></p><button id="pick">عرض/اختيار لاعبي السري</button><button id="start" disabled>بدء المباراة (منشئ الغرفة)</button></section>
+<section id="secret" class="card hidden"><h2>لاعبك السري 🔒</h2><div class="player" id="player"></div><p class="small">الخصم لا يرى اختيارك. التغيير متاح قبل بدء المباراة فقط.</p><button class="alt" id="reroll">🎲 تغيير اللاعب</button><button id="confirm">تأكيد اللاعب</button><button class="alt" id="back">رجوع</button><p id="secretmsg" class="small"></p></section>
+<section id="game" class="card hidden"><h2>الشات 💬</h2><p class="muted">اسأل بحرية، والخصم يرد. لا تكشف اسم لاعبك السري.</p><div class="chat" id="chat"></div><input id="message" maxlength="400" placeholder="اكتب سؤالًا أو إجابة"><button id="send">إرسال</button><h3>تخمين اللاعب</h3><input id="guess" placeholder="اسم اللاعب"><button class="alt" id="guessbtn">تأكيد التخمين</button><p id="gamemsg" class="small"></p></section>
+<section id="done" class="card hidden"><h1>🏆 انتهت المباراة</h1><p id="result"></p><button onclick="location.reload()">الرئيسية</button></section>
+</main>
+<script>
+// ====== إعدادات Supabase العامة (آمنة للعميل) ======
+const SUPABASE_URL = "https://fanekanixhetfvuoevff.supabase.co";
+const SUPABASE_KEY = "sb_publishable_gO4FzbMOY1_G8PO3L2GioQ_0wp9PCID";
+
+let db = null, uid = null, room = null, secret = null, sub = null, poll = null;
+const $ = x => document.getElementById(x);
+function show(id){ ["home","lobby","secret","game","done"].forEach(x => $(x).classList.toggle("hidden", x !== id)); }
+function err(e){ console.error(e); alert((e && e.message) || String(e)); }
+
+async function call(fn, args = {}){
+  if (!db) throw new Error("الاتصال بـ Supabase لم يكتمل بعد. انتظر ثانية ثم أعد المحاولة.");
+  const { data, error } = await db.rpc(fn, args);
+  if (error) throw new Error(error.message || ("فشل استدعاء " + fn));
+  return data;
+}
+
+async function init(){
+  const ok = await waitForSupabase(8000);
+  if (!ok) { $("status").textContent = "فشل تحميل مكتبة Supabase. تحقق من الإنترنت."; return; }
+
+  db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true }
+  });
+
+  const sess = await db.auth.getSession();
+  if (sess.error) throw sess.error;
+
+  if (!sess.data.session) {
+    const res = await db.auth.signInAnonymously();
+    if (res.error) throw new Error("فشل الدخول المجهول: " + res.error.message +
+      " — فعّل Anonymous Sign-ins في Supabase.");
+    uid = res.data.user.id;
+  } else {
+    uid = sess.data.session.user.id;
+  }
+
+  $("status").textContent = "متصل. أنشئ غرفة أو انضم بكود.";
+  $("create").disabled = false;
+  $("join").disabled = false;
+}
+
+function waitForSupabase(timeoutMs){
+  return new Promise(resolve => {
+    const t0 = Date.now();
+    const tick = () => {
+      if (typeof window.supabase !== "undefined" && window.supabase.createClient) return resolve(true);
+      if (Date.now() - t0 > timeoutMs) return resolve(false);
+      setTimeout(tick, 100);
+    };
+    tick();
+  });
+}
+
+async function enter(r){
+  if (!r || !r.room_id) throw new Error("استجابة الغرفة غير صالحة. تحقق من دوال create/join_game_room.");
+  room = r;
+  $("roomcode").textContent = r.room_code;
+  show("lobby");
+  await refresh();
+
+  if (poll) clearInterval(poll);
+  poll = setInterval(() => refresh().catch(err), 2500);
+
+  if (sub) { try { await db.removeChannel(sub); } catch(_){} }
+  sub = db.channel("room-" + r.room_id)
+    .on("postgres_changes",
+        { event: "INSERT", schema: "public", table: "game_messages", filter: "room_id=eq." + r.room_id },
+        e => addMsg(e.new))
+    .subscribe();
+}
+
+async function refresh(){
+  if (!room || !db) return;
+  const { data, error } = await db.from("game_rooms").select("*").eq("id", room.room_id).single();
+  if (error) throw error;
+  $("lobbymsg").textContent = data.guest_id
+    ? "اللاعبان دخلا. اختاروا لاعبيكم وأكدوا قبل البداية."
+    : "في انتظار اللاعب الثاني...";
+  $("start").disabled = !(data.host_ready && data.guest_ready && data.guest_id);
+  if (data.status === "playing" && $("game").classList.contains("hidden")) await game();
+}
+
+async function choose(){
+  secret = await call("get_or_assign_secret");
+  const meta = [secret.club, secret.country, secret.position].filter(Boolean).join(" • ");
+  $("player").textContent = secret.player_name + (meta ? " — " + meta : "");
+  $("secretmsg").textContent = "";
+  show("secret");
+}
+
+async function game(){
+  if (poll) { clearInterval(poll); poll = null; }
+  show("game");
+  const { data, error } = await db.from("game_messages").select("*").eq("room_id", room.room_id).order("created_at");
+  if (error) throw error;
+  $("chat").innerHTML = "";
+  data.forEach(addMsg);
+  $("gamemsg").textContent = "المباراة بدأت والشات متصل.";
+}
+
+function addMsg(m){
+  if (!m || !m.id) return;
+  if ($("chat").querySelector('[data-id="' + m.id + '"]')) return;
+  const d = document.createElement("div");
+  d.className = "msg" + (m.sender_id === uid ? " mine" : "");
+  d.dataset.id = m.id;
+  d.textContent = (m.sender_id === uid ? "أنت: " : "الخصم: ") + m.body;
+  $("chat").appendChild(d);
+  $("chat").scrollTop = $("chat").scrollHeight;
+}
+
+$("create").onclick = async () => { try { await enter(await call("create_game_room")); } catch(e){ err(e); } };
+$("join").onclick   = async () => { try { await enter(await call("join_game_room", { p_code: $("code").value })); } catch(e){ err(e); } };
+$("pick").onclick   = () => choose().catch(err);
+$("reroll").onclick = async () => {
+  try {
+    secret = await call("reroll_my_secret");
+    const meta = [secret.club, secret.country, secret.position].filter(Boolean).join(" • ");
+    $("player").textContent = secret.player_name + (meta ? " — " + meta : "");
+  } catch(e){ err(e); }
+};
+$("confirm").onclick = async () => {
+  try { await call("confirm_my_secret"); $("secretmsg").textContent = "تم التأكيد. انتظر الطرف الآخر."; show("lobby"); await refresh(); }
+  catch(e){ err(e); }
+};
+$("back").onclick = () => show("lobby");
+$("start").onclick = async () => { try { await call("start_game"); await game(); } catch(e){ err(e); } };
+$("send").onclick = async () => {
+  try { const v = $("message").value.trim(); if (!v) return; await call("send_game_message", { p_body: v }); $("message").value = ""; }
+  catch(e){ err(e); }
+};
+$("message").addEventListener("keydown", e => { if (e.key === "Enter") $("send").click(); });
+$("guessbtn").onclick = async () => {
+  try {
+    const r = await call("guess_opponent_player", { p_guess: $("guess").value });
+    if (r && r.correct) { $("result").textContent = "تخمين صحيح! أنت الفائز."; show("done"); }
+    else $("gamemsg").textContent = "التخمين غير صحيح، اسأل أسئلة أكثر.";
+  } catch(e){ err(e); }
+};
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(console.error));
+}
+
+init().catch(err);
+</script></body></html>
