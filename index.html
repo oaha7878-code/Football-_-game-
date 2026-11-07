@@ -1,166 +1,342 @@
 <!doctype html>
-<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>مين اللاعب؟</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#101322"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>PlayVerse - عالم الألعاب</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0d1020">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#29375a,#101322 60%);color:#fff;font-family:Tahoma,Arial;padding:18px}
-main{max-width:650px;margin:auto}.card{background:#1b2338;border:1px solid #ffffff20;border-radius:20px;padding:20px;margin:12px 0}
-h1{font-size:34px}.muted{color:#b5bfd4;line-height:1.8}.gold{color:#ffd166}button{border:0;border-radius:12px;padding:13px;font-weight:bold;cursor:pointer;background:#ffd166;color:#202033;margin:5px 0;width:100%}
-button:disabled{opacity:.45;cursor:not-allowed}.alt{background:#354363;color:white}input{width:100%;padding:14px;background:#11192b;border:1px solid #52617f;color:white;border-radius:12px;margin:8px 0;font-size:16px}
-.hidden{display:none!important}.code{font-size:34px;letter-spacing:7px;color:#ffd166;text-align:center;padding:16px;background:#11192b;border-radius:12px}
-.player{font-size:32px;color:#ffd166;text-align:center;padding:30px;background:#293b59;border-radius:16px;margin:12px 0;font-weight:bold}
-.chat{height:250px;overflow:auto;background:#11192b;border-radius:12px;padding:10px}.msg{background:#34415f;padding:10px;border-radius:12px;margin:7px 0;max-width:85%;overflow-wrap:anywhere}.mine{background:#31543f;margin-right:auto}.small{font-size:12px;color:#b5bfd4}
-</style></head><body><main>
-<h2>⚽ <span class="gold">مين اللاعب؟</span> <small class="small">أونلاين 1v1</small></h2>
-<section id="home" class="card"><h1>تحدي اللاعب السري</h1><p class="muted">كل لاعب يختار لاعبًا سريًا، وبعدها تتبادلوا الأسئلة في شات مباشر وتحاولوا تخمين لاعب الخصم.</p>
-<p class="small" id="status">جاري الاتصال بقاعدة البيانات...</p><button id="create" disabled>إنشاء غرفة</button>
-<input id="code" maxlength="6" placeholder="كود الغرفة"><button class="alt" id="join" disabled>انضمام</button></section>
-<section id="lobby" class="card hidden"><p>كود الغرفة — ابعته لصاحبك</p><div class="code" id="roomcode"></div><p id="lobbymsg" class="muted"></p><button id="pick">عرض/اختيار لاعبي السري</button><button id="start" disabled>بدء المباراة (منشئ الغرفة)</button></section>
-<section id="secret" class="card hidden"><h2>لاعبك السري 🔒</h2><div class="player" id="player"></div><p class="small">الخصم لا يرى اختيارك. التغيير متاح قبل بدء المباراة فقط.</p><button class="alt" id="reroll">🎲 تغيير اللاعب</button><button id="confirm">تأكيد اللاعب</button><button class="alt" id="back">رجوع</button><p id="secretmsg" class="small"></p></section>
-<section id="game" class="card hidden"><h2>الشات 💬</h2><p class="muted">اسأل بحرية، والخصم يرد. لا تكشف اسم لاعبك السري.</p><div class="chat" id="chat"></div><input id="message" maxlength="400" placeholder="اكتب سؤالًا أو إجابة"><button id="send">إرسال</button><h3>تخمين اللاعب</h3><input id="guess" placeholder="اسم اللاعب"><button class="alt" id="guessbtn">تأكيد التخمين</button><p id="gamemsg" class="small"></p></section>
-<section id="done" class="card hidden"><h1>🏆 انتهت المباراة</h1><p id="result"></p><button onclick="location.reload()">الرئيسية</button></section>
+:root{
+  --bg1:#1a1f3a;--bg2:#0d1020;--bg3:#2a1a4a;
+  --card:#1b2338;--card2:#232c47;
+  --gold:#ffd166;--gold2:#ffb703;
+  --red:#e63946;--red2:#c1121f;
+  --blue:#4a6cf7;--purple:#8b5cf6;
+  --text:#ffffff;--muted:#b5bfd4;
+  --border:#ffffff20;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+body{
+  background:radial-gradient(ellipse at top,#2a1a4a 0%,#1a1f3a 40%,#0d1020 100%);
+  background-attachment:fixed;
+  color:var(--text);font-family:'Cairo',Tahoma,Arial,sans-serif;
+  min-height:100vh;position:relative;overflow-x:hidden;
+  padding-bottom:80px;
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:radial-gradient(1px 1px at 20% 30%,#ffffff50,transparent),
+                   radial-gradient(1px 1px at 60% 70%,#ffffff40,transparent),
+                   radial-gradient(1px 1px at 80% 20%,#ffffff30,transparent),
+                   radial-gradient(1px 1px at 40% 90%,#ffffff50,transparent),
+                   radial-gradient(1px 1px at 90% 50%,#ffffff40,transparent),
+                   radial-gradient(2px 2px at 10% 80%,#ffd16660,transparent),
+                   radial-gradient(2px 2px at 70% 10%,#4a6cf760,transparent);
+  background-size:200% 200%;animation:twinkle 8s ease-in-out infinite alternate;
+}
+@keyframes twinkle{0%{opacity:.4}100%{opacity:.8}}
+main{max-width:650px;margin:auto;position:relative;z-index:1;padding:16px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:8px 4px 16px}
+.logo{font-size:24px;font-weight:900}
+.logo .gold{text-shadow:0 0 20px rgba(255,209,102,.5)}
+.top-icons{display:flex;gap:10px}
+.icon-btn{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;color:#fff;transition:all .2s}
+.icon-btn:active{transform:scale(.9);background:rgba(255,209,102,.2)}
+.welcome{background:linear-gradient(135deg,rgba(74,108,247,.15),rgba(139,92,246,.15));border:1px solid rgba(139,92,246,.3);border-radius:18px;padding:16px;margin-bottom:18px}
+.welcome h2{font-size:18px;font-weight:700;margin-bottom:4px}
+.welcome p{font-size:13px;color:var(--muted)}
+.section-title{display:flex;align-items:center;justify-content:space-between;margin:20px 4px 12px}
+.section-title h3{font-size:16px;font-weight:700}
+.section-title span{font-size:12px;color:var(--muted)}
+.games-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.game-card{background:linear-gradient(160deg,#232c47,#1b2338);border:1px solid var(--border);border-radius:20px;overflow:hidden;cursor:pointer;transition:transform .15s;position:relative;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.game-card:active{transform:scale(.96)}
+.game-cover{height:130px;display:flex;align-items:center;justify-content:center;font-size:56px;position:relative}
+.game-cover.blue{background:linear-gradient(135deg,#4a6cf7,#2a3fa8)}
+.game-cover.gold{background:linear-gradient(135deg,#ffd166,#ffb703)}
+.game-cover.red{background:linear-gradient(135deg,#e63946,#8b1a24)}
+.game-cover.purple{background:linear-gradient(135deg,#8b5cf6,#5b21b6)}
+.game-badge{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.6);color:#fff;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700;backdrop-filter:blur(4px)}
+.game-badge.live{background:rgba(34,197,94,.9)}
+.game-info{margin:0;padding:0;width:26px;height:26px;box-shadow:none;border:0;position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.9);color:#000;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900}
+.game-play{position:absolute;bottom:8px;left:8px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.95);color:#000;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900}
+.game-name{padding:10px 12px;font-size:14px;font-weight:700;text-align:center;background:rgba(0,0,0,.3)}
+.game-card.coming{opacity:.6}
+.game-card.coming .game-play{background:rgba(255,255,255,.5)}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:100;background:linear-gradient(180deg,rgba(27,35,56,.98),rgba(13,16,32,.98));border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:8px 0 max(8px,env(safe-area-inset-bottom));backdrop-filter:blur(12px)}
+.nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 12px;border-radius:12px;cursor:pointer;color:var(--muted);font-size:10px;font-weight:700;transition:all .2s;min-width:60px}
+.nav-item .nav-icon{font-size:20px;line-height:1}
+.nav-item.active{color:var(--gold)}
+.nav-item.active .nav-icon{transform:translateY(-2px);filter:drop-shadow(0 0 8px rgba(255,209,102,.5))}
+.nav-item:active{transform:scale(.9)}
+.page{display:none}
+.page.active{display:block;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.card{background:linear-gradient(160deg,rgba(35,44,71,.95),rgba(27,35,56,.95));border:1px solid var(--border);border-radius:20px;padding:20px;margin:12px 0;box-shadow:0 8px 32px rgba(0,0,0,.35);backdrop-filter:blur(8px)}
+.muted{color:var(--muted);line-height:1.8;font-size:14px}
+.gold{color:var(--gold)}
+.small{font-size:12px;color:var(--muted)}
+button{border:0;border-radius:14px;padding:14px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#202033;margin:6px 0;width:100%;font-size:15px;font-family:'Cairo',sans-serif;transition:transform .1s,box-shadow .2s;box-shadow:0 4px 12px rgba(255,209,102,.25)}
+button:active{transform:scale(.97)}
+button:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+button.alt{background:linear-gradient(135deg,#354363,#2a3652);color:#fff}
+input{width:100%;padding:14px;background:rgba(17,25,43,.9);border:1px solid #52617f;color:#fff;border-radius:14px;margin:8px 0;font-size:16px;font-family:'Cairo',sans-serif}
+input:focus{outline:none;border-color:var(--gold)}
+.hidden{display:none!important}
+.code{font-size:38px;letter-spacing:9px;color:var(--gold);text-align:center;padding:20px;background:linear-gradient(135deg,#11192b,#1a2340);border-radius:16px;font-weight:900;border:1px solid var(--border)}
+.player{font-size:30px;color:var(--gold);text-align:center;padding:30px;background:linear-gradient(160deg,#293b59,#1e2c45);border-radius:18px;margin:12px 0;font-weight:900;border:1px solid rgba(255,209,102,.2)}
+.chat{height:280px;overflow:auto;background:linear-gradient(180deg,rgba(17,25,43,.95),rgba(10,15,30,.95));border-radius:16px;padding:12px;border:1px solid var(--border)}
+.chat::-webkit-scrollbar{width:6px}
+.chat::-webkit-scrollbar-thumb{background:var(--gold);border-radius:3px}
+.msg{background:linear-gradient(135deg,#34415f,#2a3652);padding:10px 14px;border-radius:14px;margin:7px 0;max-width:85%;overflow-wrap:anywhere;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,.25);animation:msgIn .2s}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.mine{background:linear-gradient(135deg,#31543f,#244a34);margin-right:auto}
+.msg:not(.mine){margin-left:auto}
+
+/* Info modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.active{display:flex}
+.modal-box{background:linear-gradient(160deg,#232c47,#1b2338);border:1px solid var(--border);border-radius:24px;padding:24px;max-width:400px;width:100%;max-height:85vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.modal-box h2{font-size:22px;font-weight:900;margin-bottom:8px}
+.modal-icon{font-size:56px;text-align:center;margin-bottom:12px}
+.modal-desc{color:var(--muted);font-size:14px;line-height:1.8;margin-bottom:16px}
+.modal-info-row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px}
+.modal-info-row .label{color:var(--muted)}
+.modal-info-row .value{font-weight:700;color:var(--gold)}
+
+</style>
+</head>
+<body>
+<main>
+  <div class="topbar">
+    <div class="logo">🎮 <span class="gold">PlayVerse</span></div>
+    <div class="top-icons">
+      <div class="icon-btn" title="البروفايل" onclick="switchPage('profile', document.querySelector('.nav-item[data-page=\'profile\']'))">👤</div>
+      <div class="icon-btn" title="الإعدادات" onclick="alert('الإعدادات قريبًا!')">⚙️</div>
+    </div>
+  </div>
+
+  <div class="page active" id="page-home">
+    <div class="welcome"><h2>أهلاً بك 👋</h2><p>اختر لعبتك وابدأ التحدي مع أصحابك</p></div>
+    <div class="section-title"><h3>🔥 الألعاب</h3><span>4 ألعاب</span></div>
+    <div class="games-grid" id="games-grid"></div>
+  </div>
+
+  <div class="page" id="page-game">
+    <div style="margin-bottom:12px"><button class="alt" onclick="backHome()" style="width:auto;padding:8px 16px;font-size:13px">← رجوع</button></div>
+    <div class="card" id="game-entry">
+      <h1>تحدي اللاعب السري</h1>
+      <p class="muted">كل لاعب يختار لاعبًا سريًا، وبعدها تتبادلوا الأسئلة في شات مباشر وتحاولوا تخمين لاعب الخصم.</p>
+      <p class="small" id="status">جاري الاتصال بقاعدة البيانات...</p>
+      <button id="create" disabled>🎮 إنشاء غرفة</button>
+      <input id="code" maxlength="6" placeholder="كود الغرفة">
+      <button class="alt" id="join" disabled>🚪 انضمام</button>
+    </div>
+    <div class="card hidden" id="lobby"><p class="muted">كود الغرفة — ابعته لصاحبك</p><div class="code" id="roomcode"></div><p id="lobbymsg" class="muted"></p><button id="pick">👤 عرض/اختيار لاعبي السري</button><button id="start" disabled>▶️ بدء المباراة</button></div>
+    <div class="card hidden" id="secret"><h2>لاعبك السري 🔒</h2><div class="player" id="player"></div><p class="small">الخصم لا يرى اختيارك.</p><button class="alt" id="reroll">🎲 تغيير اللاعب</button><button id="confirm">✅ تأكيد اللاعب</button><button class="alt" id="back-secret">↩️ رجوع</button><p id="secretmsg" class="small"></p></div>
+    <div class="card hidden" id="game"><h2>الشات 💬</h2><div class="chat" id="chat"></div><input id="message" maxlength="400" placeholder="اكتب سؤالًا أو إجابة"><button id="send">📨 إرسال</button><h3>تخمين اللاعب</h3><input id="guess" placeholder="اسم اللاعب"><button class="alt" id="guessbtn">🎯 تأكيد التخمين</button><p id="gamemsg" class="small"></p></div>
+    <div class="card hidden" id="done"><h1>🏆 انتهت المباراة</h1><p id="result"></p><button onclick="backHome()">🏠 الرئيسية</button></div>
+  </div>
+
+  <div class="page" id="page-friends"><div class="card" style="text-align:center;padding:40px 20px"><div style="font-size:64px;margin-bottom:16px">👥</div><h2>الأصدقاء</h2><p class="muted">قريبًا: أضف أصدقاءك، شوف حالتهم، وتحداهم في ألعاب سريعة.</p></div></div>
+  <div class="page" id="page-profile"><div class="card" style="text-align:center;padding:40px 20px"><div style="font-size:64px;margin-bottom:16px">👤</div><h2>الملف الشخصي</h2><p class="muted">قريبًا: إحصائياتك، نقاطك، وإنجازاتك.</p></div></div>
 </main>
+
+<div class="modal-overlay" id="info-modal" onclick="if(event.target===this)Modals.close()">
+  <div class="modal-box" id="info-modal-content"></div>
+</div>
+
+<nav class="bottom-nav">
+  <div class="nav-item active" data-page="home" onclick="switchPage('home', this)"><div class="nav-icon">🏠</div><div>الرئيسية</div></div>
+  <div class="nav-item" data-page="friends" onclick="switchPage('friends', this)"><div class="nav-icon">👥</div><div>الأصدقاء</div></div>
+  <div class="nav-item" data-page="profile" onclick="switchPage('profile', this)"><div class="nav-icon">👤</div><div>حسابي</div></div>
+</nav>
+
 <script>
-// ====== إعدادات Supabase العامة (آمنة للعميل) ======
 const SUPABASE_URL = "https://fanekanixhetfvuoevff.supabase.co";
 const SUPABASE_KEY = "sb_publishable_gO4FzbMOY1_G8PO3L2GioQ_0wp9PCID";
-
 let db = null, uid = null, room = null, secret = null, sub = null, poll = null;
 const $ = x => document.getElementById(x);
-function show(id){ ["home","lobby","secret","game","done"].forEach(x => $(x).classList.toggle("hidden", x !== id)); }
 function err(e){ console.error(e); alert((e && e.message) || String(e)); }
 
-async function call(fn, args = {}){
-  if (!db) throw new Error("الاتصال بـ Supabase لم يكتمل بعد. انتظر ثانية ثم أعد المحاولة.");
-  const { data, error } = await db.rpc(fn, args);
-  if (error) throw new Error(error.message || ("فشل استدعاء " + fn));
+function switchPage(name, el){
+  Router.go(name, el);
+}
+
+const Router = {
+  go(pageName, el){
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const target = $('page-' + pageName);
+    if(target) target.classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    if(el) el.classList.add('active');
+    else {
+      const nav = document.querySelector('.nav-item[data-page="' + pageName + '"]');
+      if(nav) nav.classList.add('active');
+    }
+    window.scrollTo(0,0);
+  }
+};
+
+const GamesData = [
+  {id:'who',name:'مين اللاعب؟',icon:'⚽',color:'blue',status:'available',players:'2 لاعبين',duration:'5-10 دقائق',
+   desc:'تحدي اللاعب السري! كل لاعب يختار لاعب كرة قدم سري، وبعدها تتبادلوا الأسئلة في الشات المباشر عشان تخمنوا لاعب الخصم.',
+   how:'١. أنشئ غرفة أو انضم بكود. ٢. اختار لاعبك السري. ٣. أكد اختيارك. ٤. ابدأ الشات واسأل. ٥. خمن لاعب الخصم.'},
+  {id:'court',name:'محاكمة اللاعب',icon:'⚖️',color:'gold',status:'coming',players:'2-8 لاعبين',duration:'15-20 دقيقة',
+   desc:'ادخل قاعة المحكمة! قضية كروية تُطرح، وكل لاعب يدافع أو يعارض، والتصويت يحدد أقوى حجة.',
+   how:'اللعبة قيد التجهيز، وسيتم الإعلان عن قواعدها عند الإطلاق.'},
+  {id:'bakasa',name:'بكاسة',icon:'🎲',color:'red',status:'coming',players:'4-8 لاعبين',duration:'20-30 دقيقة',
+   desc:'لعبة اجتماعية للمواقف والتحديات والضحك مع أصحابك في غرفة واحدة.',
+   how:'اللعبة قيد التجهيز.'},
+  {id:'football-challenge',name:'تحدي الكورة',icon:'🏆',color:'purple',status:'coming',players:'2-8 لاعبين',duration:'10-15 دقيقة',
+   desc:'أسئلة وتحديات كروية سريعة لاختبار معلوماتك ومنافسة أصحابك.',
+   how:'اللعبة قيد التجهيز.'}
+];
+
+const Components = {
+  renderGames(){
+    const grid = $('games-grid');
+    if(!grid) return;
+    grid.innerHTML = GamesData.map(g => `
+      <div class="game-card ${g.status === 'coming' ? 'coming' : ''}" onclick="Components.playGame('${g.id}')">
+        <div class="game-cover ${g.color}">${g.icon}
+          <div class="game-badge ${g.status === 'available' ? 'live' : ''}">${g.status === 'available' ? 'متاح' : 'قريبًا'}</div>
+          <button type="button" class="game-info" aria-label="معلومات ${g.name}" onclick="event.stopPropagation();Components.openInfo('${g.id}')">i</button>
+          <div class="game-play">▶</div>
+        </div>
+        <div class="game-name">${g.name}</div>
+      </div>`).join('');
+  },
+  playGame(id){
+    const g = GamesData.find(x => x.id === id);
+    if(!g) return;
+    if(g.status === 'coming'){ alert('قريبًا جدًا! 🔥'); return; }
+    if(id === 'who') Router.go('game');
+  },
+  openInfo(id){
+    const g = GamesData.find(x => x.id === id);
+    if(!g) return;
+    // All inserted values come from the fixed local GamesData catalog.
+    $('info-modal-content').innerHTML = `
+      <div class="modal-icon">${g.icon}</div>
+      <h2>${g.name}</h2>
+      <p class="modal-desc">${g.desc}</p>
+      <div class="modal-info-row"><span class="label">عدد اللاعبين</span><span class="value">${g.players}</span></div>
+      <div class="modal-info-row"><span class="label">مدة اللعب</span><span class="value">${g.duration}</span></div>
+      <div class="modal-info-row"><span class="label">الحالة</span><span class="value">${g.status === 'available' ? 'متاح' : 'قريبًا'}</span></div>
+      <p class="modal-desc" style="margin-top:16px"><strong>طريقة اللعب:</strong><br>${g.how}</p>
+      <button type="button" onclick="Modals.close()">إغلاق</button>`;
+    $('info-modal').classList.add('active');
+  }
+};
+
+const Modals = {
+  close(){ $('info-modal').classList.remove('active'); }
+};
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') Modals.close();
+});
+
+function openGame(game){ Components.playGame(game === 'who' ? 'who' : game); }
+
+function showGameSection(id){
+  ['lobby','secret','game','done'].forEach(x => $(x).classList.add('hidden'));
+  $('game-entry').classList.toggle('hidden', id !== 'entry');
+  if(id !== 'entry') $(id).classList.remove('hidden');
+}
+function backHome(){
+  showGameSection('entry');
+  switchPage('home', document.querySelector('.nav-item[data-page="home"]'));
+}
+async function call(fn,args={}){
+  if(!db) throw new Error("الاتصال بـ Supabase لم يكتمل بعد.");
+  const {data,error}=await db.rpc(fn,args);
+  if(error) throw new Error(error.message || ("فشل استدعاء "+fn));
   return data;
 }
-
 async function init(){
-  const ok = await waitForSupabase(8000);
-  if (!ok) { $("status").textContent = "فشل تحميل مكتبة Supabase. تحقق من الإنترنت."; return; }
-
-  db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true }
-  });
-
-  const sess = await db.auth.getSession();
-  if (sess.error) throw sess.error;
-
-  if (!sess.data.session) {
-    const res = await db.auth.signInAnonymously();
-    if (res.error) throw new Error("فشل الدخول المجهول: " + res.error.message +
-      " — فعّل Anonymous Sign-ins في Supabase.");
-    uid = res.data.user.id;
-  } else {
-    uid = sess.data.session.user.id;
-  }
-
-  $("status").textContent = "متصل. أنشئ غرفة أو انضم بكود.";
-  $("create").disabled = false;
-  $("join").disabled = false;
+  Components.renderGames();
+  const ok=await waitForSupabase(8000);
+  if(!ok){$('status').textContent="فشل تحميل Supabase.";return;}
+  db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+  const sess=await db.auth.getSession();
+  if(sess.error) throw sess.error;
+  if(!sess.data.session){
+    const res=await db.auth.signInAnonymously();
+    if(res.error) throw new Error("فشل الدخول المجهول: "+res.error.message);
+    uid=res.data.user.id;
+  }else uid=sess.data.session.user.id;
+  $('status').textContent="متصل. أنشئ غرفة أو انضم بكود.";
+  $('create').disabled=false;$('join').disabled=false;
 }
-
 function waitForSupabase(timeoutMs){
-  return new Promise(resolve => {
-    const t0 = Date.now();
-    const tick = () => {
-      if (typeof window.supabase !== "undefined" && window.supabase.createClient) return resolve(true);
-      if (Date.now() - t0 > timeoutMs) return resolve(false);
-      setTimeout(tick, 100);
+  return new Promise(resolve=>{
+    const t0=Date.now();
+    const tick=()=>{
+      if(typeof window.supabase!=="undefined"&&window.supabase.createClient)return resolve(true);
+      if(Date.now()-t0>timeoutMs)return resolve(false);
+      setTimeout(tick,100);
     };
     tick();
   });
 }
-
 async function enter(r){
-  if (!r || !r.room_id) throw new Error("استجابة الغرفة غير صالحة. تحقق من دوال create/join_game_room.");
-  room = r;
-  $("roomcode").textContent = r.room_code;
-  show("lobby");
+  if(!r||!r.room_id)throw new Error("استجابة الغرفة غير صالحة.");
+  room=r;$('roomcode').textContent=r.room_code;
+  showGameSection('lobby');
   await refresh();
-
-  if (poll) clearInterval(poll);
-  poll = setInterval(() => refresh().catch(err), 2500);
-
-  if (sub) { try { await db.removeChannel(sub); } catch(_){} }
-  sub = db.channel("room-" + r.room_id)
-    .on("postgres_changes",
-        { event: "INSERT", schema: "public", table: "game_messages", filter: "room_id=eq." + r.room_id },
-        e => addMsg(e.new))
-    .subscribe();
+  if(poll)clearInterval(poll);
+  poll=setInterval(()=>refresh().catch(err),2500);
+  if(sub){try{await db.removeChannel(sub);}catch(_){}}
+  sub=db.channel("room-"+r.room_id).on("postgres_changes",{event:"INSERT",schema:"public",table:"game_messages",filter:"room_id=eq."+r.room_id},e=>addMsg(e.new)).subscribe();
 }
-
 async function refresh(){
-  if (!room || !db) return;
-  const { data, error } = await db.from("game_rooms").select("*").eq("id", room.room_id).single();
-  if (error) throw error;
-  $("lobbymsg").textContent = data.guest_id
-    ? "اللاعبان دخلا. اختاروا لاعبيكم وأكدوا قبل البداية."
-    : "في انتظار اللاعب الثاني...";
-  $("start").disabled = !(data.host_ready && data.guest_ready && data.guest_id);
-  if (data.status === "playing" && $("game").classList.contains("hidden")) await game();
+  if(!room||!db)return;
+  const {data,error}=await db.from("game_rooms").select("*").eq("id",room.room_id).single();
+  if(error)throw error;
+  $('lobbymsg').textContent=data.guest_id?"اللاعبان دخلا. اختاروا لاعبيكم وأكدوا قبل البداية.":"في انتظار اللاعب الثاني...";
+  $('start').disabled=!(data.host_ready&&data.guest_ready&&data.guest_id);
+  if(data.status==="playing"&&$('game').classList.contains('hidden'))await game();
 }
-
 async function choose(){
-  secret = await call("get_or_assign_secret");
-  $("player").textContent = secret.player_name;
-  $("secretmsg").textContent = "";
-  show("secret");
+  secret=await call("get_or_assign_secret");
+  $('player').textContent=secret.player_name;$('secretmsg').textContent="";
+  showGameSection('secret');
 }
-
 async function game(){
-  if (poll) { clearInterval(poll); poll = null; }
-  show("game");
-  const { data, error } = await db.from("game_messages").select("*").eq("room_id", room.room_id).order("created_at");
-  if (error) throw error;
-  $("chat").innerHTML = "";
-  data.forEach(addMsg);
-  $("gamemsg").textContent = "المباراة بدأت والشات متصل.";
+  if(poll){clearInterval(poll);poll=null;}
+  showGameSection('game');
+  const {data,error}=await db.from("game_messages").select("*").eq("room_id",room.room_id).order("created_at");
+  if(error)throw error;
+  $('chat').innerHTML="";data.forEach(addMsg);
+  $('gamemsg').textContent="المباراة بدأت والشات متصل.";
 }
-
 function addMsg(m){
-  if (!m || !m.id) return;
-  if ($("chat").querySelector('[data-id="' + m.id + '"]')) return;
-  const d = document.createElement("div");
-  d.className = "msg" + (m.sender_id === uid ? " mine" : "");
-  d.dataset.id = m.id;
-  d.textContent = (m.sender_id === uid ? "أنت: " : "الخصم: ") + m.body;
-  $("chat").appendChild(d);
-  $("chat").scrollTop = $("chat").scrollHeight;
+  if(!m||!m.id)return;
+  if($('chat').querySelector('[data-id="'+m.id+'"]'))return;
+  const d=document.createElement('div');
+  d.className="msg"+(m.sender_id===uid?" mine":"");d.dataset.id=m.id;
+  d.textContent=(m.sender_id===uid?"أنت: ":"الخصم: ")+m.body;
+  $('chat').appendChild(d);$('chat').scrollTop=$('chat').scrollHeight;
 }
-
-$("create").onclick = async () => { try { await enter(await call("create_game_room")); } catch(e){ err(e); } };
-$("join").onclick   = async () => { try { await enter(await call("join_game_room", { p_code: $("code").value })); } catch(e){ err(e); } };
-$("pick").onclick   = () => choose().catch(err);
-$("reroll").onclick = async () => {
-  try {
-    secret = await call("reroll_my_secret");
-    $("player").textContent = secret.player_name;
-  } catch(e){ err(e); }
-};
-$("confirm").onclick = async () => {
-  try { await call("confirm_my_secret"); $("secretmsg").textContent = "تم التأكيد. انتظر الطرف الآخر."; show("lobby"); await refresh(); }
-  catch(e){ err(e); }
-};
-$("back").onclick = () => show("lobby");
-$("start").onclick = async () => { try { await call("start_game"); await game(); } catch(e){ err(e); } };
-$("send").onclick = async () => {
-  try { const v = $("message").value.trim(); if (!v) return; await call("send_game_message", { p_body: v }); $("message").value = ""; }
-  catch(e){ err(e); }
-};
-$("message").addEventListener("keydown", e => { if (e.key === "Enter") $("send").click(); });
-$("guessbtn").onclick = async () => {
-  try {
-    const r = await call("guess_opponent_player", { p_guess: $("guess").value });
-    if (r && r.correct) { $("result").textContent = "تخمين صحيح! أنت الفائز."; show("done"); }
-    else $("gamemsg").textContent = "التخمين غير صحيح، اسأل أسئلة أكثر.";
-  } catch(e){ err(e); }
-};
-
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(console.error));
-}
-
+$('create').onclick=async()=>{try{await enter(await call('create_game_room'));}catch(e){err(e);}};
+$('join').onclick=async()=>{try{await enter(await call('join_game_room',{p_code:$('code').value.trim()}));}catch(e){err(e);}};
+$('pick').onclick=()=>choose().catch(err);
+$('reroll').onclick=async()=>{try{secret=await call('reroll_my_secret');$('player').textContent=secret.player_name;}catch(e){err(e);}};
+$('confirm').onclick=async()=>{try{await call('confirm_my_secret');$('secretmsg').textContent="تم التأكيد. انتظر الطرف الآخر.";showGameSection('lobby');await refresh();}catch(e){err(e);}};
+$('back-secret').onclick=()=>showGameSection('lobby');
+$('start').onclick=async()=>{try{await call('start_game');await game();}catch(e){err(e);}};
+$('send').onclick=async()=>{try{const v=$('message').value.trim();if(!v)return;await call('send_game_message',{p_body:v});$('message').value="";}catch(e){err(e);}};
+$('message').addEventListener('keydown',e=>{if(e.key==='Enter')$('send').click();});
+$('guessbtn').onclick=async()=>{try{const r=await call('guess_opponent_player',{p_guess:$('guess').value.trim()});if(r&&r.correct){$('result').textContent="تخمين صحيح! أنت الفائز.";showGameSection('done');}else $('gamemsg').textContent="التخمين غير صحيح، اسأل أسئلة أكثر.";}catch(e){err(e);}};
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(console.error));}
 init().catch(err);
-</script></body></html>
+</script>
+</body>
+</html>
